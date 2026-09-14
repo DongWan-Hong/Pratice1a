@@ -392,4 +392,4 @@ int WINAPI WinMain(
     return window.Run();
 }
 
-// ignore 적용
+// ignore 적용 123
