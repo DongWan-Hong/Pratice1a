@@ -1,7 +1,7 @@
 #include <Windows.h>
 #include "resource.h"
 
-
+HBITMAP hBit;
 HBITMAP MemBit;
 HWND hWndMain;
 #define Radius 20
@@ -207,66 +207,123 @@ int WINAPI WinMain( //
 
 void OnTimer()
 {
-	RECT crt;
+	RECT crt;                // 렉트 그리고
+	HDC hdc, hMemDC;         // 화면 DC랑 메모리 DC 만들고
+	HBITMAP OldBit;          // 비트맵 임시 저장 핸들 만들고
+	HPEN hPen, OldPen;       // 펜이랑 임시 저장 펜 만들고
+	HBRUSH hBrush, OldBrush; // 브러쉬랑 임시 저장 브러쉬 만들고 
+	int i;
 
-	// 현재 클라이언트 영역의 크기를 얻는다.
-	// crt.right  = 클라이언트 영역의 오른쪽 끝 좌표
-	// crt.bottom = 클라이언트 영역의 아래쪽 끝 좌표
-	GetClientRect(hWndMain, &crt);
+	GetClientRect(hWndMain, &crt);     // 윈도우의 창크기를 Rect에 동기화 
+	hdc = GetDC(hWndMain);  
 
+	if (hBit == NULL)
+	{
+		hBit = CreateCompatibleBitmap(hdc, crt.right, crt.bottom);
+	}
+	hMemDC = CreateCompatibleDC(hdc);
+	OldBit = (HBITMAP)SelectObject(hMemDC, hBit);
 
-	// 공이 왼쪽 또는 오른쪽 벽에 닿았는지 검사
-	// x <= R
-	// 공의 중심 x좌표가 반지름 R보다 작거나 같으면
-	//   공의 왼쪽 끝이 화면의 왼쪽 벽에 닿았다는 뜻
+	FillRect(hMemDC, &crt, GetSysColorBrush(COLOR_WINDOW)); //사각형특정 브러시 색으로 꽉 채우는 함수
 
-	// x >= crt.right - R
-	// → 공의 중심 x좌표가 화면 오른쪽 끝 - 반지름보다 크거나 같으면
-	//   공의 오른쪽 끝이 오른쪽 벽에 닿았다는 뜻
 	if (x <= Radius || x >= crt.right - Radius)
 	{
-		// x축 이동 방향을 반대로 바꾼다.
-
-		// xi = 5  → xi = -5
-		// 오른쪽 이동 → 왼쪽 이동
-
-		// xi = -5 → xi = 5
-		// 왼쪽 이동 → 오른쪽 이동
 		xi *= -1;
 	}
-
-
-	// 공이 위쪽 또는 아래쪽 벽에 닿았는지 검사
 	if (y <= Radius || y >= crt.bottom - Radius)
 	{
-		// y축 이동 방향을 반대로.
-		// 아래로 이동 중이었다면 위로,
-		// 위로 이동 중이었다면 아래로.
 		yi *= -1;
 	}
 
-
-	// 현재 이동 방향과 속도만큼 공의 위치를 변경한
-
-	// x = 100, xi = 5
-	// -> x = 105
-	
-	// y = 100, yi = -5
-	// -> y = 95
 	x += xi;
 	y += yi;
 
+	for (i = 0; i < crt.right; i += 10)
+	{
+		MoveToEx(hMemDC, i, 0, NULL);
+		LineTo(hMemDC, i, crt.bottom);
+	}
 
-	// 공의 위치가 바뀌었으므로 윈도우 전체를 다시 그리도록 요청
-	// NULL -> 클라이언트 영역 전체를 무효화
+	for (i = 0; i < crt.bottom; i += 10)
+	{
+		MoveToEx(hMemDC, 0, i, NULL);
+		LineTo(hMemDC, crt.right, i);
+	}
 
-	// TRUE -> 다시 그리기 전에 배경도 지운다.
+	hPen = CreatePen(PS_INSIDEFRAME, 5, RGB(255, 0, 0));
+	OldPen = (HPEN)SelectObject(hMemDC, hPen);
+	hBrush = CreateSolidBrush(RGB(0, 0, 255));
+	OldBrush = (HBRUSH)SelectObject(hMemDC, hBrush);
+	Ellipse(hMemDC, x - Radius, y - Radius, x + Radius, y + Radius);
+	DeleteObject(SelectObject(hMemDC, OldPen));
+	DeleteObject(SelectObject(hMemDC, OldBrush));
 
-	// 이 TRUE 때문에
-	// 배경 삭제 -> 공 다시 그리기 과정이 반복되면서 화면 깜빡임이 발생.
-	InvalidateRect(hWndMain, NULL, TRUE);
+	SelectObject(hMemDC, OldBit);
+	DeleteDC(hMemDC);
+	ReleaseDC(hWndMain, hdc);
+	InvalidateRect(hWndMain, NULL, FALSE);
+
 }
 
+
+//LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+//{
+//	HDC hdc;
+//	PAINTSTRUCT ps;
+//	HPEN hPen, OldPen;
+//	HBRUSH hBrush, OldBrush;
+//	RECT crt;
+//	int i;
+//
+//	switch (iMessage)
+//	{
+//	case WM_CREATE:
+//		x = 50;// 공의 현재  x 좌표
+//		y = 50;// 공의 현재  y 좌표
+//		xi = 4;// 공의 수평 이동
+//		yi = 5;// 공의 수직 이동
+//		SetTimer(hWnd, 1, 25, NULL);// 타이머 설치
+//		return 0;
+//
+//	case WM_TIMER:
+//		OnTimer();
+//		return 0;
+//
+//	case WM_PAINT:
+//		hdc = BeginPaint(hWnd, &ps);
+//		GetClientRect(hWnd, &crt);
+//		for (i = 0; i < crt.right; i += 10)
+//		{
+//			MoveToEx(hdc, i, 0, NULL);
+//			LineTo(hdc,i,crt.bottom);
+//		}
+//
+//		for (i = 0; i < crt.bottom; i += 10)
+//		{
+//			MoveToEx(hdc, 0, i, NULL);
+//			LineTo(hdc, crt.right, i);
+//		}
+//
+//		hPen = CreatePen(PS_INSIDEFRAME, 5, RGB(255, 0, 0));
+//		OldPen = (HPEN)SelectObject(hdc, hPen);
+//		hBrush = CreateSolidBrush(RGB(0, 0, 255));
+//		OldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+//		Ellipse(hdc, x - Radius, y - Radius, x + Radius, y + Radius);
+//		DeleteObject(SelectObject(hdc, OldPen));
+//		DeleteObject(SelectObject(hdc, OldBrush));
+//		EndPaint(hWnd, &ps);
+//		return 0;
+//	case WM_DESTROY:
+//		PostQuitMessage(0);
+//		KillTimer(hWnd, 1);
+//		return 0;
+//	}
+//
+//
+//
+//
+//	return DefWindowProc(hWnd, iMessage, wParam, lParam);
+//}
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -293,31 +350,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		GetClientRect(hWnd, &crt);
-		for (i = 0; i < crt.right; i += 10)
+		if (hBit)
 		{
-			MoveToEx(hdc, i, 0, NULL);
-			LineTo(hdc,i,crt.bottom);
+			DrawBitmap(hdc, 0, 0, hBit);
 		}
-
-		for (i = 0; i < crt.bottom; i += 10)
-		{
-			MoveToEx(hdc, 0, i, NULL);
-			LineTo(hdc, crt.right, i);
-		}
-
-		hPen = CreatePen(PS_INSIDEFRAME, 5, RGB(255, 0, 0));
-		OldPen = (HPEN)SelectObject(hdc, hPen);
-		hBrush = CreateSolidBrush(RGB(0, 0, 255));
-		OldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-		Ellipse(hdc, x - Radius, y - Radius, x + Radius, y + Radius);
-		DeleteObject(SelectObject(hdc, OldPen));
-		DeleteObject(SelectObject(hdc, OldBrush));
 		EndPaint(hWnd, &ps);
 		return 0;
+		
 	case WM_DESTROY:
-		PostQuitMessage(0);
-		KillTimer(hWnd, 1);
+		if (hBit)
+		{
+			DeleteObject(hBit);
+			PostQuitMessage(0);
+			KillTimer(hWnd, 1);
+			return 0;
+	    }
 		return 0;
 	}
 
