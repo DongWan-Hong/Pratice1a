@@ -4,7 +4,7 @@
 
 HBITMAP MemBit;
 HWND hWndMain;
-#define R 20
+#define Radius 20
 int x, y;
 int xi, yi;
 
@@ -223,7 +223,7 @@ void OnTimer()
 	// x >= crt.right - R
 	// → 공의 중심 x좌표가 화면 오른쪽 끝 - 반지름보다 크거나 같으면
 	//   공의 오른쪽 끝이 오른쪽 벽에 닿았다는 뜻
-	if (x <= R || x >= crt.right - R)
+	if (x <= Radius || x >= crt.right - Radius)
 	{
 		// x축 이동 방향을 반대로 바꾼다.
 
@@ -237,7 +237,7 @@ void OnTimer()
 
 
 	// 공이 위쪽 또는 아래쪽 벽에 닿았는지 검사
-	if (y <= R || y >= crt.bottom - R)
+	if (y <= Radius || y >= crt.bottom - Radius)
 	{
 		// y축 이동 방향을 반대로.
 		// 아래로 이동 중이었다면 위로,
@@ -310,7 +310,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 		OldPen = (HPEN)SelectObject(hdc, hPen);
 		hBrush = CreateSolidBrush(RGB(0, 0, 255));
 		OldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-		Ellipse(hdc, x - R, y - R, x + R, y + R);
+		Ellipse(hdc, x - Radius, y - Radius, x + Radius, y + Radius);
 		DeleteObject(SelectObject(hdc, OldPen));
 		DeleteObject(SelectObject(hdc, OldBrush));
 		EndPaint(hWnd, &ps);
