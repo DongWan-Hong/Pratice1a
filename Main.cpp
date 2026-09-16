@@ -3,6 +3,11 @@
 
 
 HBITMAP MemBit;
+HWND hWndMain;
+#define R 20
+int x, y;
+int xi, yi;
+
 
 LRESULT CALLBACK WndProc(
 	HWND hWnd,
@@ -114,6 +119,8 @@ int WINAPI WinMain( //
 
 	UpdateWindow(hWnd);
 
+	hWndMain = hWnd;
+
 	MSG msg = {};
 
 	while (GetMessage(
@@ -135,7 +142,7 @@ int WINAPI WinMain( //
 
 }
 
-//LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
+//LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) // 가상의 MemDC에 그리기
 //{
 //	HDC hdc;
 //	PAINTSTRUCT ps;
@@ -162,38 +169,160 @@ int WINAPI WinMain( //
 //	return DefWindowProc(hWnd, Message, wParam, lParam);
 //}
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
+//LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) // 메모리  DC에 그려서 hdc에 출력하기
+//{
+//	HDC hdc;
+//	PAINTSTRUCT ps;
+//	int i;
+//	HBRUSH Mybrush, OldBrush;
+//	int x, y;
+//	switch (Message)
+//	{
+//	case WM_PAINT:
+//		hdc = BeginPaint(hWnd, &ps);
+//		for (i = 0; i < 5000; i++)
+//		{
+//			Mybrush = CreateSolidBrush(RGB(rand() % 256, rand() % 256, rand() % 256));
+//			OldBrush = (HBRUSH)SelectObject(hdc, Mybrush);
+//			x = rand() % 720;
+//			y = rand() % 520;
+//			Ellipse(hdc, x, y, x + rand() % 50 + 30, y + rand() % 50 + 30);
+//			SelectObject(hdc, OldBrush);
+//			DeleteObject(Mybrush);
+//		}
+//		EndPaint(hWnd, &ps);
+//		return 0;
+//	case WM_LBUTTONDOWN:
+//		InvalidateRect(hWnd, NULL, FALSE);
+//		return 0;
+//
+//	case WM_DESTROY:
+//		PostQuitMessage(0);
+//		return 0;
+//	}
+//
+//
+//	return DefWindowProc(hWnd, Message, wParam, lParam);
+//}
+
+void OnTimer()
+{
+	RECT crt;
+
+	// 현재 클라이언트 영역의 크기를 얻는다.
+	// crt.right  = 클라이언트 영역의 오른쪽 끝 좌표
+	// crt.bottom = 클라이언트 영역의 아래쪽 끝 좌표
+	GetClientRect(hWndMain, &crt);
+
+
+	// 공이 왼쪽 또는 오른쪽 벽에 닿았는지 검사
+	// x <= R
+	// 공의 중심 x좌표가 반지름 R보다 작거나 같으면
+	//   공의 왼쪽 끝이 화면의 왼쪽 벽에 닿았다는 뜻
+
+	// x >= crt.right - R
+	// → 공의 중심 x좌표가 화면 오른쪽 끝 - 반지름보다 크거나 같으면
+	//   공의 오른쪽 끝이 오른쪽 벽에 닿았다는 뜻
+	if (x <= R || x >= crt.right - R)
+	{
+		// x축 이동 방향을 반대로 바꾼다.
+
+		// xi = 5  → xi = -5
+		// 오른쪽 이동 → 왼쪽 이동
+
+		// xi = -5 → xi = 5
+		// 왼쪽 이동 → 오른쪽 이동
+		xi *= -1;
+	}
+
+
+	// 공이 위쪽 또는 아래쪽 벽에 닿았는지 검사
+	if (y <= R || y >= crt.bottom - R)
+	{
+		// y축 이동 방향을 반대로.
+		// 아래로 이동 중이었다면 위로,
+		// 위로 이동 중이었다면 아래로.
+		yi *= -1;
+	}
+
+
+	// 현재 이동 방향과 속도만큼 공의 위치를 변경한
+
+	// x = 100, xi = 5
+	// -> x = 105
+	
+	// y = 100, yi = -5
+	// -> y = 95
+	x += xi;
+	y += yi;
+
+
+	// 공의 위치가 바뀌었으므로 윈도우 전체를 다시 그리도록 요청
+	// NULL -> 클라이언트 영역 전체를 무효화
+
+	// TRUE -> 다시 그리기 전에 배경도 지운다.
+
+	// 이 TRUE 때문에
+	// 배경 삭제 -> 공 다시 그리기 과정이 반복되면서 화면 깜빡임이 발생.
+	InvalidateRect(hWndMain, NULL, TRUE);
+}
+
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
 	PAINTSTRUCT ps;
+	HPEN hPen, OldPen;
+	HBRUSH hBrush, OldBrush;
+	RECT crt;
 	int i;
-	HBRUSH Mybrush, OldBrush;
-	int x, y;
-	switch (Message)
+
+	switch (iMessage)
 	{
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		for (i = 0; i < 5000; i++)
-		{
-			Mybrush = CreateSolidBrush(RGB(rand() % 256, rand() % 256, rand() % 256));
-			OldBrush = (HBRUSH)SelectObject(hdc, Mybrush);
-			x = rand() % 720;
-			y = rand() % 520;
-			Ellipse(hdc, x, y, x + rand() % 50 + 30, y + rand() % 50 + 30);
-			SelectObject(hdc, OldBrush);
-			DeleteObject(Mybrush);
-		}
-		EndPaint(hWnd, &ps);
-		return 0;
-	case WM_LBUTTONDOWN:
-		InvalidateRect(hWnd, NULL, FALSE);
+	case WM_CREATE:
+		x = 50;// 공의 현재  x 좌표
+		y = 50;// 공의 현재  y 좌표
+		xi = 4;// 공의 수평 이동
+		yi = 5;// 공의 수직 이동
+		SetTimer(hWnd, 1, 25, NULL);// 타이머 설치
 		return 0;
 
+	case WM_TIMER:
+		OnTimer();
+		return 0;
+
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+		GetClientRect(hWnd, &crt);
+		for (i = 0; i < crt.right; i += 10)
+		{
+			MoveToEx(hdc, i, 0, NULL);
+			LineTo(hdc,i,crt.bottom);
+		}
+
+		for (i = 0; i < crt.bottom; i += 10)
+		{
+			MoveToEx(hdc, 0, i, NULL);
+			LineTo(hdc, crt.right, i);
+		}
+
+		hPen = CreatePen(PS_INSIDEFRAME, 5, RGB(255, 0, 0));
+		OldPen = (HPEN)SelectObject(hdc, hPen);
+		hBrush = CreateSolidBrush(RGB(0, 0, 255));
+		OldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+		Ellipse(hdc, x - R, y - R, x + R, y + R);
+		DeleteObject(SelectObject(hdc, OldPen));
+		DeleteObject(SelectObject(hdc, OldBrush));
+		EndPaint(hWnd, &ps);
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		KillTimer(hWnd, 1);
 		return 0;
 	}
 
 
-	return DefWindowProc(hWnd, Message, wParam, lParam);
+
+
+	return DefWindowProc(hWnd, iMessage, wParam, lParam);
 }
