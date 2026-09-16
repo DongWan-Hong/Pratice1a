@@ -2,51 +2,113 @@
 #include "resource.h"
 
 
+HBITMAP MemBit;
+
 LRESULT CALLBACK WndProc(
 	HWND hWnd,
 	UINT Message,
 	WPARAM wParam,
 	LPARAM lParam
-	);
+);
 
 
 
-int WINAPI WinMain(
-	HINSTANCE hInstance, // 현재 실행중인 프로그램의 인스턴스
-	HINSTANCE hPrevInstance, // 사용 안함
-	LPSTR ipCmdLine, // 프로그램 실행 시 전달된 명령중 문자열
-	int nCmdShow) // 처음 윈도우 킬때 창 어떻게 할 것인지
+void DrawBitmap(HDC hdc, int x, int y, HBITMAP hBit)
 {
+	HDC hMemDC;
+	HBITMAP OldBitmap;
+	int Width, Height;
+	BITMAP bit;
 
-	const char* className = "API Test"; // 만들 윈도우의 클래스 이름
+	hMemDC = CreateCompatibleDC(hdc);
+	OldBitmap = (HBITMAP)SelectObject(hMemDC, hBit);
 
-	WNDCLASSA wc = {}; // 만들 윈도우의 정보를 담을 구조체
+	GetObject(hBit, sizeof(BITMAP), &bit);
+	Width = bit.bmWidth;
+	Height = bit.bmHeight;
 
-	wc.lpfnWndProc = WndProc; // 메세지 어떻게 처리할래
+	BitBlt(hdc, x, y, Width, Height, hMemDC, 0, 0, SRCCOPY);
 
-	wc.hInstance = hInstance; // 이 윈도우 클래스가 어느 프로그램의 소속인지
+	SelectObject(hMemDC, OldBitmap);
+	DeleteDC(hMemDC);
+}
 
-	wc.lpszClassName = className; // 클래스 이름 
+//가상 메모리 비트맵에 그림을 미리 그려둔다.
+void Ready(HWND hWnd)
+{
+	int i;
+	HBITMAP hOldBmp;
+	HDC hdc, MemDC;
+	hdc = GetDC(hWnd);
+	HBRUSH MyBrush, OldBrush;
+	int x, y;
 
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW); // 커서는 어떻게 할래
+	// 이미 비트맵이 만들어져 있으면 지운다
+	if (MemBit)
+		DeleteObject(MemBit);
 
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	MemBit = CreateCompatibleBitmap(hdc, 800, 600);
+	MemDC = CreateCompatibleDC(hdc);
+	hOldBmp = (HBITMAP)SelectObject(MemDC, MemBit);
 
-	RegisterClassA(&wc);
+	// 메모리 비트맵을 흰색으로 채운 후 무작위로 타원 5000개를 그린다.
 
-	HWND hWnd = CreateWindowA(
-		className,
-		"Test",
-		WS_OVERLAPPEDWINDOW,
-		100,
-		100,
-		800,
-		600,
-		NULL,
-		NULL,
-		hInstance,
-		NULL
-	);
+	PatBlt(MemDC, 0, 0, 800, 600, WHITENESS);
+	for (i = 0; i < 5000; i++)
+	{
+		MyBrush = CreateSolidBrush(RGB(rand() % 256, rand() % 256, rand() % 256));
+		OldBrush = (HBRUSH)SelectObject(MemDC, MyBrush);
+		x = rand() % 720;
+		y = rand() % 520;
+		Ellipse(MemDC, x, y, x + rand() % 50 + 30, y + rand() % 50 + 30);
+		SelectObject(MemDC, OldBrush);
+		DeleteObject(MyBrush);
+	}
+
+	SelectObject(MemDC, hOldBmp);
+	DeleteObject(MemDC);
+	ReleaseDC(hWnd, hdc);
+
+
+
+
+}
+
+
+
+int WINAPI WinMain( //
+	HINSTANCE hInstance, // 현재 실행중인 프로그램의 인스턴스
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine, // 프로그램 실행시 전달된 명령줄 문자열
+	int nCmdShow) // 처음 윈도우 킬때 창 어떻게 할래?
+{
+	const char* className = "BitmapTest";
+
+	WNDCLASSA wc = {};
+
+	wc.lpfnWndProc = WndProc; // 메세지 처리 방식
+
+	wc.hInstance = hInstance; // 지금 만드는 윈도우는 이 프로그램의 소속이다
+
+	wc.lpszClassName = className; // 윈도우 클래스의 이름
+
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW); // 마우스 커서 방식
+
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // 윈도우 배경 설정
+
+	RegisterClassA(&wc); // 작성한 윈도우 클래스 정보를 윈도우에 등록
+
+	HWND hWnd = CreateWindowA(wc.lpszClassName,// 사용할 윈도우 클래스 ㅇ름
+		"Test", // 윈도우 제목 표시줄에 나올 문자열
+		WS_OVERLAPPEDWINDOW, // 윈도우 스타일 기본 포맷
+		100, //윈도우 시작 X좌표
+		100, //윈도우 시작 Y좌표
+		800, //윈도우 전체 가로 크기
+		600, //윈도우 전체 세로 크기
+		NULL,//부모 윈도우, NULL이면 최상위 윈도우
+		NULL,//메뉴핸들
+		wc.hInstance,// 현재 프로그램의 인스턴스
+		NULL); // 추가로 넘겨줄 사용자 데이터
 
 	ShowWindow(hWnd, nCmdShow);
 
@@ -54,62 +116,81 @@ int WINAPI WinMain(
 
 	MSG msg = {};
 
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (GetMessage(
+		&msg,  // 메세지를 저장할 곳
+		NULL, // 어느 윈도우의 메세지를 받을지, 지정안함
+		0,    // 받을 메세지 범위의 시작
+		0))   // 받을 메세지 범위의 끝
 	{
-		TranslateMessage(&msg);
+		TranslateMessage(&msg); //입력받은 메세지를 문자 메세지로
 
-		DispatchMessage(&msg);
-		
+		DispatchMessage(&msg); //메세지를 WndProc로 전달
+
+
 	}
+
+
+
+
 
 }
 
-LRESULT WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
-{
+//LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
+//{
+//	HDC hdc;
+//	PAINTSTRUCT ps;
+//	switch (Message)
+//	{
+//	case WM_PAINT:
+//		hdc = BeginPaint(hWnd, &ps);
+//		DrawBitmap(hdc, 0, 0, MemBit);
+//		EndPaint(hWnd, &ps);
+//		return 0;
+//	case WM_LBUTTONDOWN:
+//		Ready(hWnd);
+//		InvalidateRect(hWnd, NULL, FALSE);
+//		return 0;
+//	case WM_DESTROY:
+//		if (MemBit)
+//			DeleteObject(MemBit);
+//		PostQuitMessage(0);
+//		return 0;
+//	}
+//
+//
+//
+//	return DefWindowProc(hWnd, Message, wParam, lParam);
+//}
 
+LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
+{
+	HDC hdc;
+	PAINTSTRUCT ps;
+	int i;
+	HBRUSH Mybrush, OldBrush;
+	int x, y;
 	switch (Message)
 	{
-
 	case WM_PAINT:
-	{
-		PAINTSTRUCT ps;
-
-
-		HDC hdc = BeginPaint(hWnd, &ps); // 그리기 상태 세팅하고 hWnd에 그릴 준비
-
-		HDC MemDC = CreateCompatibleDC(hdc); // hdc랑 호환하는 메모리 DC
-
-		HBITMAP hBitmap = LoadBitmap( // 비트맵 로드해서 객체 만들고
-			GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP1));
-
-		BITMAP bitmap = {}; // 구조체 만들어
-
-		GetObject(hBitmap, sizeof(BITMAP), &bitmap); // 비트맵 객체 정보 담을 구조체
-
-		HBITMAP OldBitmap = (HBITMAP)SelectObject(MemDC, hBitmap);
-		// 화면에 넣을 준비 MeMDC 쓸꺼고 hBitmap 객체를 그릴꺼임
-
-		BitBlt(hdc, 0, 0,
-			bitmap.bmWidth,
-			bitmap.bmHeight,
-			MemDC,
-			0, 0,
-			SRCCOPY);
-
-		SelectObject(MemDC, OldBitmap); // MemDC를 원래 비트맵으로 복구
-
-		DeleteObject(hBitmap);
-
-		DeleteDC(MemDC);
-
+		hdc = BeginPaint(hWnd, &ps);
+		for (i = 0; i < 5000; i++)
+		{
+			Mybrush = CreateSolidBrush(RGB(rand() % 256, rand() % 256, rand() % 256));
+			OldBrush = (HBRUSH)SelectObject(hdc, Mybrush);
+			x = rand() % 720;
+			y = rand() % 520;
+			Ellipse(hdc, x, y, x + rand() % 50 + 30, y + rand() % 50 + 30);
+			SelectObject(hdc, OldBrush);
+			DeleteObject(Mybrush);
+		}
 		EndPaint(hWnd, &ps);
-
 		return 0;
-	}
+	case WM_LBUTTONDOWN:
+		InvalidateRect(hWnd, NULL, FALSE);
+		return 0;
+
 	case WM_DESTROY:
-
 		PostQuitMessage(0);
-
 		return 0;
 	}
 
