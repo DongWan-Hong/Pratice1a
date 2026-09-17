@@ -13,17 +13,41 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="소스 파일\API_BOOK">
+      <UniqueIdentifier>{b9af44ec-2f2d-4f0c-ad59-4233fdfc3e5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\API_WEB">
+      <UniqueIdentifier>{56ed9690-cbad-4fa7-a05c-b57253bf6f05}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Practice1a.cpp">
+    <ClCompile Include="MFC_C.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Partice1a_Readme.cpp">
+    <ClCompile Include="MFC_C++.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="34_01.cpp">
+      <Filter>소스 파일\API_BOOK</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>소스 파일\API_BOOK</Filter>
+    </ClCompile>
+    <ClCompile Include="Main_02.cpp">
+      <Filter>소스 파일\API_BOOK</Filter>
+    </ClCompile>
+    <ClCompile Include="Main_Menu.cpp">
+      <Filter>소스 파일\API_BOOK</Filter>
+    </ClCompile>
+    <ClCompile Include="API_Test_01.cpp">
+      <Filter>소스 파일\API_WEB</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Main_Menu.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
