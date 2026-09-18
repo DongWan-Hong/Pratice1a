@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include "resource.h"
+#include <math.h>
 
 
 HWND hWndMain;
@@ -71,26 +72,66 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
 	PAINTSTRUCT ps;
-	SYSTEMTIME st;
-	static TCHAR Mes[255] = TEXT("마우스 왼쪽버튼을 누르면 현재 시간을 조사합니다");
+	POINT ar[] = { 25,10,125,10,140,30,10,30,25,10 };
+	HBRUSH BrR, BrB, BrY, OldBr;
+	RECT rect;
+	
 
 	switch (iMessage)
 	{
+	case WM_SIZE:
+			InvalidateRect(hWnd, NULL, TRUE);
+		return 0;
+	
 	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
+		hdc = BeginPaint(hWnd, &ps); // 화면에 다시 그려야 할 때 사용하는 DC를 얻음
+
+		BrR = CreateSolidBrush(RGB(255, 0, 0));     // 빨간 브러시 생성
+		BrB = CreateSolidBrush(RGB(0, 0, 255));     // 파란 브러시 생성
+		BrY = CreateSolidBrush(RGB(255, 255, 0));   // 노란 브러시 생성
+
+		// 논리 좌표와 화면 좌표의 비율을 직접 지정할 수 있는 맵핑 모드
+		SetMapMode(hdc, MM_ANISOTROPIC);
 
 
-		Ellipse(hdc, 10, 10, 150, 150);
-		Ellipse(hdc, 40, 35, 65, 60);
-		Ellipse(hdc, 95, 35, 120, 60);
-		Rectangle(hdc, 70, 70, 90, 90);
-		Rectangle(hdc, 40, 110, 120, 120);
+		SetWindowExtEx(hdc, 100, 100, NULL);
 
-		EndPaint(hWnd, &ps);
+		// 현재 창의 실제 클라이언트 영역 크기를 가져옴.
+		GetClientRect(hWnd, &rect);
+
+
+		SetViewportExtEx(hdc, rect.right, rect.bottom, NULL);
+
+
+
+		OldBr = (HBRUSH)SelectObject(hdc, BrR); // 빨간 브러시 선택, 이전 브러시 백업
+
+		Rectangle(hdc, 20, 30, 130, 90);
+
+		SelectObject(hdc, BrB); // 파란 브러시 선택
+
+		Polygon(hdc, ar, 5);
+
+		SelectObject(hdc, BrY); 
+
+		
+		Rectangle(hdc, 30, 40, 60, 70);
+		Rectangle(hdc, 90, 40, 120, 70);
+		Ellipse(hdc, 135, 5, 155, 25);
+
+
+		SelectObject(hdc, OldBr);
+		DeleteObject(BrR);
+		DeleteObject(BrB);
+		DeleteObject(BrY);
+
+		EndPaint(hWnd, &ps); // 그리기 종료
 		return 0;
+
 	case WM_DESTROY:
-		PostQuitMessage(0); 
+		PostQuitMessage(0);
 		return 0;
+
 	}
 
 	return DefWindowProc(hWnd, iMessage, wParam, lParam);

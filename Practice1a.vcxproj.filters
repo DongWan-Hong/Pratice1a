@@ -45,6 +45,9 @@
     <ClCompile Include="34_03.cpp">
       <Filter>소스 파일\API_BOOK</Filter>
     </ClCompile>
+    <ClCompile Include="33_06.cpp">
+      <Filter>소스 파일\API_BOOK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
