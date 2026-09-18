@@ -233,6 +233,7 @@ void OnTimer()
 	if (y <= Radius || y >= crt.bottom - Radius)
 	{
 		yi *= -1;
+	    
 	}
 
 	x += xi;

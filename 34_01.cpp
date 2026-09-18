@@ -142,26 +142,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_PAINT:
 	{
-		PAINTSTRUCT ps{};                    // 이번 그리기 작업의 정보
-		HDC hdc = BeginPaint(hWnd, &ps);      // 그리기에 사용할 DC 얻기
-		wchar_t text[128];                   // 출력할 문자열 저장 공간
+		PAINTSTRUCT ps{};                    
+		HDC hdc = BeginPaint(hWnd, &ps);      
+		wchar_t text[128];                   
 
 		int width = GetSystemMetrics(SM_CXSCREEN);   // 주 모니터 너비
 		int height = GetSystemMetrics(SM_CYSCREEN); // 주 모니터 높이
 		int buttons = GetSystemMetrics(SM_CMOUSEBUTTONS); // 마우스 버튼 개수
 		bool swapped = GetSystemMetrics(SM_SWAPBUTTON) != 0; // 버튼 교체 여부
 
-		wsprintfW(text, L"화면 크기: %d x %d", width, height); // 숫자를 문자열로 변환
-		TextOutW(hdc, 10, 10, text, lstrlenW(text));           // 첫 번째 줄 출력
+		wsprintfW(text, L"화면 크기: %d x %d", width, height); 
+		TextOutW(hdc, 10, 10, text, lstrlenW(text));           
 
-		wsprintfW(text, L"마우스 버튼: %d개", buttons);         // 버튼 개수 문자열
-		TextOutW(hdc, 10, 40, text, lstrlenW(text));           // 두 번째 줄 출력
+		wsprintfW(text, L"마우스 버튼: %d개", buttons);         
+		TextOutW(hdc, 10, 40, text, lstrlenW(text));          
 
 		const wchar_t* state = swapped ? L"교체됨" : L"교체 안 됨"; // 상태에 맞는 문자열
 		wsprintfW(text, L"좌우 버튼: %s", state);               // 상태 안내 문자열
-		TextOutW(hdc, 10, 70, text, lstrlenW(text));           // 세 번째 줄 출력
+		TextOutW(hdc, 10, 70, text, lstrlenW(text));          
 
-		EndPaint(hWnd, &ps);                  // BeginPaint와 짝을 맞춰 그리기 종료
+		EndPaint(hWnd, &ps);                  
 		return 0;
 	}
 	case WM_DESTROY:
